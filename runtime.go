@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 )
 
 func newRuntimeDir(path string) (Dir, error) {
@@ -15,15 +16,26 @@ func newRuntimeDir(path string) (Dir, error) {
 	}
 
 	return &runtimeDir{
-		path: path,
+		path:  path,
+		files: map[string]File{},
 	}, nil
 }
 
 type runtimeDir struct {
-	path string
+	path  string
+	files map[string]File
 }
 
 func (r *runtimeDir) Open(path string) (http.File, error) {
+	path = strings.TrimSpace(path)
+	if len(path) > 0 && path[0] == filepath.Separator {
+		path = path[1:]
+	}
+
+	if f, ok := r.files[path]; ok {
+		return os.Open(f.(*runtimeFile).path)
+	}
+
 	return http.Dir(r.path).Open(path)
 }
 
@@ -34,9 +46,18 @@ func (r *runtimeDir) Read(path ...string) ([]os.FileInfo, error) {
 
 func (r *runtimeDir) File(path ...string) File {
 	p := filepath.Join(path...)
+	if f, ok := r.files[p]; ok {
+		return f
+	}
+
 	return &runtimeFile{
 		path: filepath.Join(r.path, p),
 	}
+}
+
+func (r *runtimeDir) Add(path string, f File) Dir {
+	r.files[path] = f
+	return r
 }
 
 func newRuntimeFile(path string) (File, error) {

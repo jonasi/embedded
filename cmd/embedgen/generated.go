@@ -144,6 +144,33 @@ func (r *dir) File(path ...string) embedded.File {
 	return &file{n, err}
 }
 
+func (r *dir) Add(path string, f embedded.File) embedded.Dir {
+	parts := strings.Split(path, string(filepath.Separator))
+	cur := r.node
+	for i, p := range parts {
+		if i == len(parts) - 1 {
+			cur.children[p] = f.(*file).node
+		} else {
+			ch := cur.children[p]
+			if ch == nil {
+				cur.children[p] = &node{
+					name: p,
+					children: map[string]*node{},
+					fi: &fileInfo{
+						name: p,
+						isdir: true,
+					},
+				}
+				ch = cur.children[p]
+			}
+
+			cur = ch
+		}
+	}
+
+	return r
+}
+
 type httpfile struct {
 	io.ReadSeeker
 	node *node

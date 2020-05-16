@@ -4,7 +4,6 @@ import (
 	"errors"
 	"net/http"
 	"os"
-	"path/filepath"
 )
 
 // Errors
@@ -16,24 +15,12 @@ type Dir interface {
 	http.FileSystem
 	Read(path ...string) ([]os.FileInfo, error)
 	File(path ...string) File
+	Add(string, File) Dir
 }
 
 type File interface {
 	Contents() ([]byte, error)
 	MustContents() []byte
-}
-
-// FileFunc returns an "Open" func
-func FileFunc(path string) func() (http.File, error) {
-	file, err := frameFile(2)
-	return func() (http.File, error) {
-		if err != nil {
-			return nil, err
-		}
-
-		fpath := filepath.Join(filepath.Dir(file), path)
-		return os.Open(fpath)
-	}
 }
 
 // MustFile calls file and panics if there is an error
