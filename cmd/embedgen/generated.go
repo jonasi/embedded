@@ -23,33 +23,34 @@ import (
 var useFs, _ = strconv.ParseBool(os.Getenv("EMBEDDED_USE_FS"))
 
 func newDir(path string) (embedded.Dir, error) {
-	id, err := callerID(3)
+	d, err := pathData(path);
 	if err != nil {
 		return nil, err
 	}
 
-	id = id + "|" + path
-	if data[id] == nil {
-		return nil, os.ErrNotExist
-	}
-
-	return &dir{data[id]}, nil
+	return &dir{d}, nil
 }
 
 func NewDir(path string) (embedded.Dir, error) {
 	if useFs {
-		return embedded.NewDir(path)
+		return embedded.NewRuntimeDir(path, 3)
 	}
 
 	return newDir(path)
 }
 
 func MustDir(path string) embedded.Dir {
+	var (
+		d embedded.Dir
+		err error
+	)
+
 	if useFs {
-		return embedded.MustDir(path)
+		d, err = embedded.NewRuntimeDir(path, 3)
+	} else {
+		d, err = newDir(path)
 	}
 
-	d, err := newDir(path)
 	if err != nil {
 		panic(err)
 	}
@@ -59,28 +60,29 @@ func MustDir(path string) embedded.Dir {
 
 func NewFile(path string) (embedded.File, error) {
 	if useFs {
-		return embedded.NewFile(path)
+		return embedded.NewRuntimeFile(path, 3)
 	}
 
-	id, err := callerID(3)
+	d, err := pathData(path);
 	if err != nil {
 		return nil, err
 	}
 
-	id = id + "|" + path
-	if data[id] == nil {
-		return nil, os.ErrNotExist
-	}
-
-	return &file{data[id], nil}, nil
+	return &file{d, nil}, nil
 }
 
 func MustFile(path string) embedded.File {
+	var (
+		f embedded.File
+		err error
+	)
+
 	if useFs {
-		return embedded.MustFile(path)
+		f, err = embedded.NewRuntimeFile(path, 3)
+	} else {
+		f, err = NewFile(path)
 	}
 
-	f, err := NewFile(path)
 	if err != nil {
 		panic(err)
 	}
@@ -217,6 +219,20 @@ func (r *file) MustContents() []byte {
 	}
 
 	return r.node.content
+}
+
+func pathData(path string) (*node, error) {
+	id, err := callerID(4)
+	if err != nil {
+		return nil, err
+	}
+
+	id = id + "|" + path
+	if data[id] == nil {
+		return nil, os.ErrNotExist
+	}
+
+	return data[id], nil
 }
 
 func callerID(depth int) (string, error) {

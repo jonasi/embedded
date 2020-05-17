@@ -25,7 +25,7 @@ type File interface {
 
 // MustFile calls file and panics if there is an error
 func MustFile(path string) File {
-	f, err := newRuntimeFile(path)
+	f, err := NewRuntimeFile(path, 3)
 	if err != nil {
 		panic(err)
 	}
@@ -34,12 +34,12 @@ func MustFile(path string) File {
 
 // File returns an http.File provided at path.
 func NewFile(path string) (File, error) {
-	return newRuntimeFile(path)
+	return NewRuntimeFile(path, 3)
 }
 
 // MustDir calls Dir and panics if there is an error
 func MustDir(path string) Dir {
-	d, err := newRuntimeDir(path)
+	d, err := NewRuntimeDir(path, 3)
 	if err != nil {
 		panic(err)
 	}
@@ -49,5 +49,5 @@ func MustDir(path string) Dir {
 
 // NewDir returns an http.Dir provided at dir.
 func NewDir(path string) (Dir, error) {
-	return newRuntimeDir(path)
+	return NewRuntimeDir(path, 3)
 }

@@ -9,8 +9,8 @@ import (
 	"strings"
 )
 
-func newRuntimeDir(path string) (Dir, error) {
-	path, err := relpath(path, 3)
+func NewRuntimeDir(path string, depth int) (Dir, error) {
+	path, err := relpath(path, depth)
 	if err != nil {
 		return nil, err
 	}
@@ -60,8 +60,8 @@ func (r *runtimeDir) Add(path string, f File) Dir {
 	return r
 }
 
-func newRuntimeFile(path string) (File, error) {
-	path, err := relpath(path, 3)
+func NewRuntimeFile(path string, depth int) (File, error) {
+	path, err := relpath(path, depth)
 	if err != nil {
 		return nil, err
 	}
@@ -89,18 +89,10 @@ func (r *runtimeFile) MustContents() []byte {
 }
 
 func relpath(path string, depth int) (string, error) {
-	file, err := frameFile(depth + 1)
-	if err != nil {
-		return "", err
-	}
-
-	return filepath.Join(filepath.Dir(file), path), nil
-}
-
-func frameFile(depth int) (string, error) {
 	_, file, _, ok := runtime.Caller(depth)
 	if !ok {
 		return "", ErrCallerInfo
 	}
-	return file, nil
+
+	return filepath.Join(filepath.Dir(file), path), nil
 }
