@@ -23,7 +23,7 @@ import (
 var useFs, _ = strconv.ParseBool(os.Getenv("EMBEDDED_USE_FS"))
 
 func newDir(path string) (embedded.Dir, error) {
-	d, err := pathData(path);
+	d, err := pathData(path)
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +41,7 @@ func NewDir(path string) (embedded.Dir, error) {
 
 func MustDir(path string) embedded.Dir {
 	var (
-		d embedded.Dir
+		d   embedded.Dir
 		err error
 	)
 
@@ -63,7 +63,7 @@ func NewFile(path string) (embedded.File, error) {
 		return embedded.NewRuntimeFile(path, 3)
 	}
 
-	d, err := pathData(path);
+	d, err := pathData(path)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +73,7 @@ func NewFile(path string) (embedded.File, error) {
 
 func MustFile(path string) embedded.File {
 	var (
-		f embedded.File
+		f   embedded.File
 		err error
 	)
 
@@ -96,8 +96,10 @@ type dir struct {
 
 func (r *dir) Open(path string) (http.File, error) {
 	path = strings.TrimSpace(path)
-	if len(path) > 0 && path[0] == filepath.Separator {
+	if len(path) > 1 && path[0] == filepath.Separator {
 		path = path[1:]
+	} else if len(path) == 1 && path[0] == filepath.Separator {
+		return &httpfile{node: r.node}, nil
 	}
 
 	parts := strings.Split(path, string(filepath.Separator))
@@ -150,16 +152,16 @@ func (r *dir) Add(path string, f embedded.File) embedded.Dir {
 	parts := strings.Split(path, string(filepath.Separator))
 	cur := r.node
 	for i, p := range parts {
-		if i == len(parts) - 1 {
+		if i == len(parts)-1 {
 			cur.children[p] = f.(*file).node
 		} else {
 			ch := cur.children[p]
 			if ch == nil {
 				cur.children[p] = &node{
-					name: p,
+					name:     p,
 					children: map[string]*node{},
 					fi: &fileInfo{
-						name: p,
+						name:  p,
 						isdir: true,
 					},
 				}
@@ -183,8 +185,8 @@ func (h *httpfile) Close() error {
 }
 
 func (h *httpfile) Readdir(count int) ([]os.FileInfo, error) {
-	if count >= 0 {
-		return nil, errors.New("count >= 0 not implemented")
+	if count > 0 {
+		return nil, errors.New("Readdir with count > 0 not implemented")
 	}
 
 	sl := make([]os.FileInfo, len(h.node.children))
@@ -203,7 +205,7 @@ func (h *httpfile) Stat() (os.FileInfo, error) {
 
 type file struct {
 	node *node
-	err error
+	err  error
 }
 
 func (r *file) Contents() ([]byte, error) {
@@ -258,11 +260,11 @@ func callerID(depth int) (string, error) {
 }
 
 type fileInfo struct {
-	name string
-	size int64
-	mode os.FileMode
+	name    string
+	size    int64
+	mode    os.FileMode
 	modtime time.Time
-	isdir bool
+	isdir   bool
 }
 
 func (f *fileInfo) Name() string       { return f.name }
